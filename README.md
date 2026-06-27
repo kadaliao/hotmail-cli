@@ -2,7 +2,7 @@
 
 A small read-only CLI for Hotmail and Outlook.com mailboxes. It uses Microsoft Graph to search messages and download file attachments from your mailbox.
 
-中文文档: [README.zh-CN.md](README.zh-CN.md)
+中文文档: [README.zh-CN.md](https://github.com/kadaliao/hotmail-cli/blob/main/README.zh-CN.md)
 
 ## Why Use This
 
@@ -122,4 +122,3 @@ uv build
 ## License
 
 MIT
-

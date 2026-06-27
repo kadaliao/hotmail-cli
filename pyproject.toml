@@ -1,6 +1,6 @@
 [project]
 name = "hotmail-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "CLI for fetching Hotmail/Outlook messages and attachments via Microsoft Graph."
 readme = "README.md"
 requires-python = ">=3.11"
