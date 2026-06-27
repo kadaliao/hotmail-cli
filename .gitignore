@@ -1,0 +1,11 @@
+.venv/
+.uv-cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+downloads/
+.hotmail-cli/
+*.egg-info/
+build/
+dist/
+.DS_Store
