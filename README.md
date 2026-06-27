@@ -1,59 +1,79 @@
 # Hotmail CLI
 
-A local CLI for reading Hotmail/Outlook messages and downloading attachments through Microsoft Graph.
+A small read-only CLI for Hotmail and Outlook.com mailboxes. It uses Microsoft Graph to search messages and download file attachments from your mailbox.
 
-## Features
+中文文档: [README.zh-CN.md](README.zh-CN.md)
 
-- Sign in with Microsoft device code flow.
-- Search messages by subject keyword.
-- Filter results by sender and date range locally.
-- Fetch message details by id.
-- Download file attachments to a local directory.
+## Why Use This
 
-The CLI requests Microsoft Graph `Mail.Read` only. It does not ask for mailbox write/delete permissions.
+- Works with personal Microsoft accounts such as Hotmail and Outlook.com.
+- Uses Microsoft device code login, so the CLI never sees your password.
+- Requests only `Mail.Read`.
+- Downloads attachments from matching messages.
+- Stores the OAuth token locally with `0600` file permissions.
 
-## Setup
+This tool is intentionally narrow. It does not send email, delete messages, mark messages, or manage calendars.
+
+## Installation
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv sync
+uvx hotmail-cli --help
 ```
 
-## Microsoft App Registration
+Or install it into an environment:
 
-Create a Microsoft Entra app registration for a public/native client:
+```bash
+uv tool install hotmail-cli
+hotmail --help
+```
 
-1. Go to **Microsoft Entra admin center** -> **App registrations** -> **New registration**.
-2. Set a display name such as `hotmail-cli`.
-3. Choose **Personal Microsoft accounts only** if you only need Hotmail/Outlook consumer accounts.
-4. Leave redirect URI empty for device code flow.
-5. After creation, open **Authentication** -> **Settings** and enable **Allow public client flows**.
-6. Copy the **Application (client) ID**.
+## Microsoft App Setup
 
-## Authentication
+You need your own Microsoft Entra app registration. This is free and lets Microsoft show you exactly what the CLI is allowed to access.
+
+1. Open the [Microsoft Entra admin center](https://entra.microsoft.com/).
+2. Go to **App registrations** -> **New registration**.
+3. Name it `hotmail-cli` or any name you prefer.
+4. For **Supported account types**, choose **Personal Microsoft accounts only** for Hotmail/Outlook.com.
+5. Leave **Redirect URI** empty.
+6. Create the app.
+7. Open **Authentication** -> **Settings**.
+8. Enable **Allow public client flows** and save.
+9. Copy the **Application (client) ID**.
+
+## Sign In
 
 ```bash
 export HOTMAIL_CLIENT_ID="your Microsoft app client id"
-UV_CACHE_DIR=.uv-cache uv run hotmail auth
+hotmail auth
 ```
 
-The command prints a Microsoft device code flow URL and code. After you sign in and approve access, the token cache is saved to:
+The command prints a URL and code. Open the URL in your browser, enter the code, sign in to Microsoft, and approve the requested `Mail.Read` access.
+
+The token cache is saved to:
 
 ```text
 ~/.hotmail-cli/token.json
 ```
 
-The file is written with `0600` permissions.
-
 You can also pass the client id directly:
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run hotmail --client-id "your Microsoft app client id" auth
+hotmail --client-id "your Microsoft app client id" auth
 ```
 
 ## Search Messages
 
+Search by subject:
+
 ```bash
-UV_CACHE_DIR=.uv-cache uv run hotmail search \
+hotmail search --subject "statement" --top 10
+```
+
+Search by subject, sender, and date range:
+
+```bash
+hotmail search \
   --subject "invoice" \
   --sender "billing@example.com" \
   --since 2026-06-01 \
@@ -61,33 +81,45 @@ UV_CACHE_DIR=.uv-cache uv run hotmail search \
   --top 10
 ```
 
-Or search by subject only:
+The output is Microsoft Graph message JSON. Each message includes an `id` that can be used with `fetch` and `attachments`.
+
+Microsoft Graph message `$search` cannot be reliably combined with `$filter` or `$orderby`, so Hotmail CLI searches by subject server-side first, then applies sender and date filters locally.
+
+## Fetch One Message
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run hotmail search --subject "statement" --top 5
-```
-
-The output is Microsoft Graph message JSON. Use the returned `id` to fetch details or download attachments.
-
-Microsoft Graph message `$search` cannot be reliably combined with `$filter`/`$orderby`, so the CLI uses server-side subject search first and then applies sender/date filters locally.
-
-## Fetch Message Details
-
-```bash
-UV_CACHE_DIR=.uv-cache uv run hotmail fetch MESSAGE_ID
+hotmail fetch MESSAGE_ID
 ```
 
 ## Download Attachments
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run hotmail attachments MESSAGE_ID --output-dir downloads
+hotmail attachments MESSAGE_ID --output-dir downloads
 ```
 
-Only Microsoft Graph `fileAttachment` items are saved.
+Only Microsoft Graph `fileAttachment` items are saved. Inline items and reference attachments are ignored.
 
-## Development
+## Local Development
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run pytest
+uv sync
+uv run pytest
+uv run hotmail --help
 ```
+
+Build the package:
+
+```bash
+uv build
+```
+
+## Security Notes
+
+- Do not commit `~/.hotmail-cli/token.json`.
+- Do not share message IDs or downloaded attachments publicly.
+- Revoke access anytime from your Microsoft account security page or from the app registration.
+
+## License
+
+MIT
 
